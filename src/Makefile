@@ -41,7 +41,7 @@ updateEquilibrium.o: updateEquilibrium.h updateEquilibrium.cpp
 writeMesh.o: writeMesh.h writeMesh.cpp
 	$(CC) $(CFLAGS) -I /Users/jabhiji/MYLIBS/hdf5/include -c writeMesh.cpp -o writeMesh.o
 
-sc3d.o: sc3d.cpp
+sc3d.o: sc3d.h sc3d.cpp
 	$(CC) $(CFLAGS) -c sc3d.cpp -o sc3d.o
 
 clean:
