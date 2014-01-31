@@ -15,9 +15,11 @@ EXE = sc3d.x
 $(EXE):	initialize.o \
 	streaming.o \
 	calc_dPdt.o \
+	updateMacro.o \
+	updateEquilibrium.o \
 	writeMesh.o \
 	sc3d.o
-	$(CC) initialize.o streaming.o calc_dPdt.o writeMesh.o sc3d.o -o $(EXE) -L /Users/jabhiji/MYLIBS/hdf5/lib -lm -lhdf5 -lz -liconv
+	$(CC) initialize.o streaming.o calc_dPdt.o updateMacro.o updateEquilibrium.o writeMesh.o sc3d.o -o $(EXE) -L /Users/jabhiji/MYLIBS/hdf5/lib -lm -lhdf5 -lz -liconv
 
 # compile dependencies
 
@@ -29,6 +31,12 @@ streaming.o: streaming.h streaming.cpp
 
 calc_dPdt.o: calc_dPdt.h calc_dPdt.cpp
 	$(CC) $(CFLAGS) -c calc_dPdt.cpp -o calc_dPdt.o
+
+updateMacro.o: updateMacro.h updateMacro.cpp
+	$(CC) $(CFLAGS) -c updateMacro.cpp -o updateMacro.o
+
+updateEquilibrium.o: updateEquilibrium.h updateEquilibrium.cpp
+	$(CC) $(CFLAGS) -c updateEquilibrium.cpp -o updateEquilibrium.o
 
 writeMesh.o: writeMesh.h writeMesh.cpp
 	$(CC) $(CFLAGS) -I /Users/jabhiji/MYLIBS/hdf5/include -c writeMesh.cpp -o writeMesh.o
