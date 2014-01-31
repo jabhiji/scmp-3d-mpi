@@ -12,16 +12,24 @@ EXE = sc3d.x
 
 # root target (builds the final executable)
 
-$(EXE):	initialize.o \
+$(EXE):	mpiSetup.o \
+	domainDecomp.o \
+	initialize.o \
 	streaming.o \
 	calc_dPdt.o \
 	updateMacro.o \
 	updateEquilibrium.o \
 	writeMesh.o \
 	sc3d.o
-	$(CC) initialize.o streaming.o calc_dPdt.o updateMacro.o updateEquilibrium.o writeMesh.o sc3d.o -o $(EXE) -L /Users/jabhiji/MYLIBS/hdf5/lib -lm -lhdf5 -lz -liconv
+	$(CC) mpiSetup.o domainDecomp.o initialize.o streaming.o calc_dPdt.o updateMacro.o updateEquilibrium.o writeMesh.o sc3d.o -o $(EXE) -L /Users/jabhiji/MYLIBS/hdf5/lib -lm -lhdf5 -lz -liconv
 
 # compile dependencies
+
+mpiSetup.o: mpiSetup.h mpiSetup.cpp
+	$(CC) $(CFLAGS) -c mpiSetup.cpp -o mpiSetup.o
+
+domainDecomp.o: domainDecomp.h domainDecomp.cpp
+	$(CC) $(CFLAGS) -c domainDecomp.cpp -o domainDecomp.o
 
 initialize.o: initialize.h initialize.cpp
 	$(CC) $(CFLAGS) -c initialize.cpp -o initialize.o

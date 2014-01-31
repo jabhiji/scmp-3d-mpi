@@ -6,6 +6,56 @@
       #include <iostream>     // cout()
       #include <cmath>        // pow()
       #include <ctime>        // clock_t, clock(), CLOCKS_PER_SEC
+      #include <mpi.h>        // MPI 
+
+//    data structures
+
+//    define a struct to store the beginning and ending node numbers inside a process
+      struct node_range
+      {
+        int beg;
+        int end;
+      };
+
+//    set up MPI
+
+      extern void mpiSetup (int argc,               // argc is short for argument count (set depending on how many arguments the user enters at the command line) 
+                            char *argv[],           // pointer to a char array  ... argv is short for argument values ... array size set based on the value of argc
+                            int* numprocs,          // pointer to an integer - number of distinct MPI processes on which this code will be executed 
+                            int* myid,              // pointer to an integer - process ID
+                            const int ndims,        // number of spatial dimensions for domain partitioning
+                            int* dims,              // pointer to --> dims[0] - number of partitions of the domain along X, Y and Z...dims[0], dims[1], dims[2]
+                            int* coords,            // pointer to --> coords[0] - coordinates of this process within the Cartesian topology ...coords[0], coords[1], coords[2]
+                            MPI_Comm & CART_COMM,   // name of the Cartesian communicator
+                            int* nbr_WEST,          // pointer to --> ID of neighboring process to my west   (i-1,j,k)
+                            int* nbr_EAST,          // pointer to --> ID of neighboring process to my east   (i+1,j,k)
+                            int* nbr_SOUTH,         // pointer to --> ID of neighboring process to my south  (i,j-1,k)
+                            int* nbr_NORTH,         // pointer to --> ID of neighboring process to my north  (i,j+1,k)
+                            int* nbr_BOTTOM,        // pointer to --> ID of neighboring process to my bottom (i,j,k-1)
+                            int* nbr_TOP);          // pointer to --> ID of neighboring process to my top    (i,j,k+1)
+
+void domainDecomp3D(// inputs
+                    const int      & myid,           // MPI rank
+                    const MPI_Comm & CART_COMM,      // MPI communicator name
+                    const int      * dims,           // number of partitions of the domain along X, Y and Z, dims[0], dims[1] and dims[2]
+                    const int      * coords,         // (X,Y,Z) "coordinates" of this partition
+                    const int      & nodes_x, 
+                    const int      & nodes_y, 
+                    const int      & nodes_z,
+                    const double   & delta,
+                    const double   & x_min,
+                    const double   & y_min,
+                    const double   & z_min,
+                    // outputs
+                    node_range & x_range, 
+                    node_range & y_range, 
+                    node_range & z_range, 
+                    double & local_origin_x, 
+                    double & local_origin_y, 
+                    double & local_origin_z,
+                    int & LX,
+                    int & LY,
+                    int & LZ);
 
 //    initialize all buffers
 
@@ -52,21 +102,49 @@
                             const int      time,
                             const double*  rho);
 
-//    lattice size
+//    MPI 
+
+      int numprocs;          // total number of processors
+      int myid;              // processor id
+      const int ndims = 3;   // number of dimensions of the Cartesian space
+      int dims[ndims];       // number of domain partitions along X, Y and Z
+      MPI_Comm CART_COMM;    // new Cartesian communicator after automatic 3D domain decomposition
+      int coords[ndims];     // 3D coordinates of process "myid" after domain decomposition
+      int nbr_WEST;          // id of neighbor in location (i-1)
+      int nbr_EAST;          // id of neighbor in location (i+1)
+      int nbr_SOUTH;         // id of neighbor in location (j-1)
+      int nbr_NORTH;         // id of neighbor in location (j+1)
+      int nbr_BOTTOM;        // id of neighbor in location (k-1)
+      int nbr_TOP;           // id of neighbor in location (k+1)
+
+//    global size
 
       const int NX = 64;         // number of lattice points along X
       const int NY = 64;         // number of lattice points along Y
       const int NZ = 64;         // number of lattice points along Z
 
-//    domain size in lattice units
-//    grid spacing is unity along X and Y
+      const double delta = 1.0;  // grid spacing is unity along X and Y
 
-      const double xmin = 0;
-      const double xmax = NX-1;
-      const double ymin = 0;
-      const double ymax = NY-1;
-      const double zmin = 0;
-      const double zmax = NZ-1;
+      const double x_min = 0;    // global minimum X coordinate
+      const double x_max = NX-1;
+      const double y_min = 0;    // global minimum Y coordinate
+      const double y_max = NY-1;
+      const double z_min = 0;    // global minimum Z coordinate
+      const double z_max = NZ-1;
+
+//    local parameters (obtained after MPI domain decomposition)
+
+      int LX;   // number of lattice points along X
+      int LY;   // number of lattice points along Y
+      int LZ;   // number of lattice points along Z
+
+      double local_origin_x;  // X coordinate of the local domain origin
+      double local_origin_y;  // Y coordinate of the local domain origin
+      double local_origin_z;  // Z coordinate of the local domain origin
+
+      node_range x_range;
+      node_range y_range;
+      node_range z_range;
 
 //    LBM parameters
 

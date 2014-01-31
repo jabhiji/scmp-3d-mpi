@@ -10,8 +10,37 @@
 
       #include "sc3d.h"
 
-      int main(void)
+      int main(int argc, char* argv[])
       {
+//      set up MPI and implement Cartesian domain decomposition
+//      identify coordinates and neighboring MPI ranks
+
+        mpiSetup(argc, argv, &numprocs, &myid, ndims,
+                 &dims[0], &coords[0], CART_COMM,
+                 &nbr_WEST, &nbr_EAST,
+                 &nbr_SOUTH, &nbr_NORTH,
+                 &nbr_BOTTOM, &nbr_TOP);
+
+//      calculate size of local 3D sub-domain handled by this rank
+
+        domainDecomp3D(myid, CART_COMM, dims, coords,
+                       NX,
+                       NY,
+                       NZ,
+                       delta,
+                       x_min,
+                       y_min,
+                       z_min,
+                       x_range,
+                       y_range,
+                       z_range,
+                       local_origin_x,
+                       local_origin_y,
+                       local_origin_z,
+                       LX,
+                       LY,
+                       LZ);
+
 //      define buffers
 
         double *rho    = new double[NX*NY*NZ]; // density
