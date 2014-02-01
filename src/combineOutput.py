@@ -33,9 +33,9 @@ for time in range (0,num_frame+1):
 
   os.system('cat ../out/loopxmf.xmf >> ../out/time_series.xmf')
   # cocatenate XDMF files from individual processors to create data for this time level
-  filename = 'ls -l ../out/xdmf/data_' + str(frame).zfill(6) + '*'
+  filename = 'ls -l ../out/xdmf/data_t_' + str(frame).zfill(6) + '*'
   os.system(filename)
-  filename = 'cat ../out/xdmf/data_' + str(frame).zfill(6) + '* >> ../out/time_series.xmf'
+  filename = 'cat ../out/xdmf/data_t_' + str(frame).zfill(6) + '* >> ../out/time_series.xmf'
   os.system(filename)
   output = open('../out/loopxmf.xmf','w')
   output.write('</Grid>\n')

@@ -24,7 +24,7 @@
 //      calculate size of local 3D sub-domain handled by this rank
 
         domainDecomp3D(myid, CART_COMM, dims, coords,
-                       NX,
+                       NX,              
                        NY,
                        NZ,
                        delta,
@@ -37,27 +37,99 @@
                        local_origin_x,
                        local_origin_y,
                        local_origin_z,
-                       LX,
-                       LY,
-                       LZ);
+                       LX,                // local nodes along X
+                       LY,                // local nodes along Y
+                       LZ);               // local nodes along Z
 
-//      define buffers
+//      ghost layer thickness
 
-        double *rho    = new double[NX*NY*NZ]; // density
-        double *u      = new double[NX*NY*NZ]; // velocity x-component
-        double *v      = new double[NX*NY*NZ]; // velocity y-component
-        double *w      = new double[NX*NY*NZ]; // velocity z-component
-        double *dPdt_x = new double[NX*NY*NZ]; // momentum change along x
-        double *dPdt_y = new double[NX*NY*NZ]; // momentum change along y
-        double *dPdt_z = new double[NX*NY*NZ]; // momentum change along z
-        double *f      = new double[NX*NY*NZ*19]; // PDF
-        double *f_eq   = new double[NX*NY*NZ*19]; // PDF
-        double *f_new  = new double[NX*NY*NZ*19]; // PDF
+        const int nn = 1;
+
+//      define local buffers for this MPI rank
+
+        const int size1 = (nn+LX+nn) * (nn+LY+nn) * (nn+LZ+nn);
+        const int size2 = size1 * 19;
+
+        double *rho    = new double[size1]; // density
+        double *u      = new double[size1]; // velocity x-component
+        double *v      = new double[size1]; // velocity y-component
+        double *w      = new double[size1]; // velocity z-component
+        double *dPdt_x = new double[size1]; // momentum change along x
+        double *dPdt_y = new double[size1]; // momentum change along y
+        double *dPdt_z = new double[size1]; // momentum change along z
+
+        double *f      = new double[size2]; // PDF
+        double *f_eq   = new double[size2]; // PDF
+        double *f_new  = new double[size2]; // PDF
 
 //      initialize fields
 
-        initialize(NX, NY, NZ, rhoAvg, &ex[0], &ey[0], &ez[0], &wt[0], 
+        initialize(nn, LX, LY, LZ, myid, rhoAvg, &ex[0], &ey[0], &ez[0], &wt[0], 
                    rho, u, v, w, f, f_new, f_eq);
+
+        // fill ghost layers in the macroscopic variable buffers ( rho, u, v, w )
+
+        fillGhostLayersMacVar(nn,              // ghost layer thickness
+                              LX,              // number of nodes along X (local for this MPI process)
+                              LY,              // number of nodes along Y (local for this MPI process)
+                              LZ,              // number of nodes along Z (local for this MPI process)
+                              myid,            // MPI process id or rank
+                              CART_COMM,       // Cartesian communicator
+                              nbr_WEST,        // neighboring MPI process to my west
+                              nbr_EAST,        // neighboring MPI process to my east
+                              nbr_SOUTH,       // neighboring MPI process to my south
+                              nbr_NORTH,       // neighboring MPI process to my north
+                              nbr_BOTTOM,      // neighboring MPI process to my bottom
+                              nbr_TOP,         // neighboring MPI process to my top
+                              rho,            // density
+                              u,              // velocity (x-component)
+                              v,              // velocity (y-component)
+                              w);             // velocity (z-component)
+
+        exchangePDF (nn,                // number of ghost cell layers
+                     Q,                 // number of LBM streaming directions
+                     LX,                // number of voxels along X in this process
+                     LY,                // number of voxels along Y in this process
+                     LZ,                // number of voxels along Z in this process
+                     myid,              // my process id
+                     CART_COMM,         // Cartesian topology communicator
+                     nbr_WEST,          // process id of my western neighbor
+                     nbr_EAST,          // process id of my eastern neighbor
+                     nbr_SOUTH,         // process id of my southern neighbor
+                     nbr_NORTH,         // process id of my northern neighbor
+                     nbr_BOTTOM,        // process id of my bottom neighbor
+                     nbr_TOP,           // process id of my top neighbor
+                     f);                // pointer to the 4D array being exchanged (of type double)
+
+        exchangePDF (nn,                // number of ghost cell layers
+                     Q,                 // number of LBM streaming directions
+                     LX,                // number of voxels along X in this process
+                     LY,                // number of voxels along Y in this process
+                     LZ,                // number of voxels along Z in this process
+                     myid,              // my process id
+                     CART_COMM,         // Cartesian topology communicator
+                     nbr_WEST,          // process id of my western neighbor
+                     nbr_EAST,          // process id of my eastern neighbor
+                     nbr_SOUTH,         // process id of my southern neighbor
+                     nbr_NORTH,         // process id of my northern neighbor
+                     nbr_BOTTOM,        // process id of my bottom neighbor
+                     nbr_TOP,           // process id of my top neighbor
+                     f_new);            // pointer to the 4D array being exchanged (of type double)
+
+        exchangePDF (nn,                // number of ghost cell layers
+                     Q,                 // number of LBM streaming directions
+                     LX,                // number of voxels along X in this process
+                     LY,                // number of voxels along Y in this process
+                     LZ,                // number of voxels along Z in this process
+                     myid,              // my process id
+                     CART_COMM,         // Cartesian topology communicator
+                     nbr_WEST,          // process id of my western neighbor
+                     nbr_EAST,          // process id of my eastern neighbor
+                     nbr_SOUTH,         // process id of my southern neighbor
+                     nbr_NORTH,         // process id of my northern neighbor
+                     nbr_BOTTOM,        // process id of my bottom neighbor
+                     nbr_TOP,           // process id of my top neighbor
+                     f_eq);             // pointer to the 4D array being exchanged (of type double)
 
 //      time integration
 
@@ -67,7 +139,9 @@
 
 //      write initial condition to output files
 
-        writeMesh(NX, NY, NZ, time, rho);
+        writeMesh(nn, CART_COMM, myid, 
+                  local_origin_x, local_origin_y, local_origin_z, delta, 
+                  LX, LY, LZ, time, rho);
 
 //      time integration loop
 
@@ -75,18 +149,55 @@
         {
           time++; // increment lattice time
 
-          streaming(NX, NY, NZ, ex, ey, ez, tau, f, f_new, f_eq);
+          streaming(nn, LX, LY, LZ, ex, ey, ez, tau, f, f_new, f_eq);
 
-          calc_dPdt(NX, NY, NZ, ex, ey, ez, G11, rho, dPdt_x, dPdt_y, dPdt_z);
+          calc_dPdt(nn, LX, LY, LZ, ex, ey, ez, G11, rho, dPdt_x, dPdt_y, dPdt_z);
 
-          updateMacro(NX, NY, NZ, ex, ey, ez, wt, tau, 
+          updateMacro(nn, LX, LY, LZ, ex, ey, ez, wt, tau, 
                       rho, u, v, w, dPdt_x, dPdt_y, dPdt_z, f);
 
-          updateEquilibrium(NX, NY, NZ, ex, ey, ez, wt, rho, u, v, w, f_eq);
+          // fill ghost layers in the macroscopic variable buffers ( rho, u, v, w )
+
+          fillGhostLayersMacVar(nn,              // ghost layer thickness
+                                LX,              // number of nodes along X (local for this MPI process)
+                                LY,              // number of nodes along Y (local for this MPI process)
+                                LZ,              // number of nodes along Z (local for this MPI process)
+                                myid,            // MPI process id or rank
+                                CART_COMM,       // Cartesian communicator
+                                nbr_WEST,        // neighboring MPI process to my west
+                                nbr_EAST,        // neighboring MPI process to my east
+                                nbr_SOUTH,       // neighboring MPI process to my south
+                                nbr_NORTH,       // neighboring MPI process to my north
+                                nbr_BOTTOM,      // neighboring MPI process to my bottom
+                                nbr_TOP,         // neighboring MPI process to my top
+                                rho,            // density
+                                u,              // velocity (x-component)
+                                v,              // velocity (y-component)
+                                w);             // velocity (z-component)
+
+          updateEquilibrium(nn, LX, LY, LZ, ex, ey, ez, wt, rho, u, v, w, f_eq);
+
+          exchangePDF (nn,                // number of ghost cell layers
+                       Q,                 // number of LBM streaming directions
+                       LX,                // number of voxels along X in this process
+                       LY,                // number of voxels along Y in this process
+                       LZ,                // number of voxels along Z in this process
+                       myid,              // my process id
+                       CART_COMM,         // Cartesian topology communicator
+                       nbr_WEST,          // process id of my western neighbor
+                       nbr_EAST,          // process id of my eastern neighbor
+                       nbr_SOUTH,         // process id of my southern neighbor
+                       nbr_NORTH,         // process id of my northern neighbor
+                       nbr_BOTTOM,        // process id of my bottom neighbor
+                       nbr_TOP,           // process id of my top neighbor
+                       f_eq);             // pointer to the 4D array being exchanged (of type double)
 
 //        transfer fnew back to f
 
-          for(int f_index = 0; f_index < NX*NY*NZ*19; f_index++)
+          const int GX = nn + LX + nn;  // size along X including ghost nodes
+          const int GY = nn + LY + nn;  // size along Y including ghost nodes
+          const int GZ = nn + LZ + nn;  // size along Z including ghost nodes
+          for(int f_index = 0; f_index < GX*GY*GZ*19; f_index++)
           {
             f[f_index] = f_new[f_index];
           }
@@ -95,7 +206,9 @@
 
           if(time%100 == 0) 
           {
-            writeMesh(NX, NY, NZ, time, rho);
+             writeMesh(nn, CART_COMM, myid, 
+                       local_origin_x, local_origin_y, local_origin_z, delta, 
+                       LX, LY, LZ, time, rho);
           }
 
 //        calculate the number of lattice time-steps per second
@@ -119,6 +232,10 @@
         delete[] f;
         delete[] f_eq;
         delete[] f_new;
+
+//      MPI clean up
+
+        MPI_Finalize();
 
 //      main program ends
 

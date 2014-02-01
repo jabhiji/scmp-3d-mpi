@@ -2,19 +2,25 @@
 
       #include "updateEquilibrium.h"
 
-      void updateEquilibrium(const int NX, const int NY, const int NZ,
+      void updateEquilibrium(const int nn, const int NX, const int NY, const int NZ,
                              double* ex, double* ey, double* ez, double* wt,
                              const double* rho, 
                              const double* u, const double* v, const double* w,
                              double* f_eq)
       {
-        for(int k = 0; k < NZ-1; k++)
+        const int GX = nn + NX + nn;
+        const int GY = nn + NY + nn;
+        const int GZ = nn + NZ + nn;
+        for(int k = 0; k < NZ; k++)
         {  
-          for(int j = 0; j < NY-1; j++)
+          int K = nn+k;
+          for(int j = 0; j < NY; j++)
           {  
-            for(int i = 0; i < NX-1; i++)
+            int J = nn+j;
+            for(int i = 0; i < NX; i++)
             {
-              int N = i + NX*j + NX*NY*k;
+              int I = nn+i;
+              int N = I + GX*J + GX*GY*K;
               double udotu = u[N]*u[N] + v[N]*v[N] + w[N]*w[N];
               for(int id = 0; id < 19; id++)
               {

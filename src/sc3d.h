@@ -59,7 +59,7 @@ void domainDecomp3D(// inputs
 
 //    initialize all buffers
 
-      extern void initialize(const int NX, const int NY, const int NZ,
+      extern void initialize(const int nn, const int NX, const int NY, const int NZ, const int myid,
                              const double rhoAvg,
                              double* ex, double* ey, double* ez, double* wt,
                              double* rho, double* u, double* v, double* w,
@@ -67,28 +67,62 @@ void domainDecomp3D(// inputs
 
 //    function to stream PDFs to neighboring lattice points
 
-      extern void streaming(const int NX, const int NY, const int NZ,
+      extern void streaming(const int nn, const int NX, const int NY, const int NZ,
                             double* ex, double* ey, double* ez, double tau,
                             double* f, double* f_new, double* f_eq);
 
 //    calculate the change in momentum because of inter-particle forces
 
-      extern void calc_dPdt(const int NX, const int NY, const double NZ,
+      extern void calc_dPdt(const int nn, const int NX, const int NY, const double NZ,
                             double* ex, double* ey, double* ez, double* G11,
                             double* rho, double* dPdt_x, double* dPdt_y, double* dPdt_z);
 
 //    calculate the density and velocity at all nodes
 
-      extern void updateMacro(const int NX, const int NY, const int NZ,
+      extern void updateMacro(const int nn, const int NX, const int NY, const int NZ,
                               double* ex, double* ey, double* ez, double* wt,
                               double tau,
                               double* rho, double* u, double* v, double* w,
                               double* dPdt_x, double* dPdt_y, double* dPdt_z,
                               double* f);
 
+//    fill ghost layers in the macroscopic variable buffers ( rho, u, v, w )
+
+      extern void fillGhostLayersMacVar(const int       nn,              // ghost layer thickness
+                                        const int       LX,              // number of nodes along X (local for this MPI process)
+                                        const int       LY,              // number of nodes along Y (local for this MPI process)
+                                        const int       LZ,              // number of nodes along Z (local for this MPI process)
+                                        const int       myid,            // MPI process id or rank
+                                        const MPI_Comm  CART_COMM,       // Cartesian communicator
+                                        const int       nbr_WEST,        // neighboring MPI process to my west
+                                        const int       nbr_EAST,        // neighboring MPI process to my east
+                                        const int       nbr_SOUTH,       // neighboring MPI process to my south
+                                        const int       nbr_NORTH,       // neighboring MPI process to my north
+                                        const int       nbr_BOTTOM,      // neighboring MPI process to my bottom
+                                        const int       nbr_TOP,         // neighboring MPI process to my top
+                                              double    *rho,            // density
+                                              double    *u,              // velocity (x-component)
+                                              double    *v,              // velocity (y-component)
+                                              double    *w);             // velocity (z-component)
+
+      extern void exchangePDF (const int      nn,                // number of ghost cell layers
+                               const int      Q,                 // number of LBM streaming directions
+                               const int      MX,                // number of voxels along X in this process
+                               const int      MY,                // number of voxels along Y in this process
+                               const int      MZ,                // number of voxels along Z in this process
+                               const int      myid,              // my process id
+                               const MPI_Comm CART_COMM,         // Cartesian topology communicator
+                               const int      nbr_WEST,          // process id of my western neighbor
+                               const int      nbr_EAST,          // process id of my eastern neighbor
+                               const int      nbr_SOUTH,         // process id of my southern neighbor
+                               const int      nbr_NORTH,         // process id of my northern neighbor
+                               const int      nbr_BOTTOM,        // process id of my bottom neighbor
+                               const int      nbr_TOP,           // process id of my top neighbor
+                                  double      *PDF4d);            // pointer to the 4D array being exchanged (of type double)
+
 //    update equilibrium PDFs based on the latest {rho,u,v,w}
 
-      extern void updateEquilibrium(const int NX, const int NY, const int NZ,
+      extern void updateEquilibrium(const int nn, const int NX, const int NY, const int NZ,
                                     double* ex, double* ey, double* ez, double* wt,
                                     const double* rho, 
                                     const double* u, const double* v, const double* w,
@@ -96,7 +130,14 @@ void domainDecomp3D(// inputs
 
 //    writes data to output files using XDMF + HDF5 format
 
-      extern void writeMesh(const int      NX, 
+      extern void writeMesh(const int      nn,
+                            const MPI_Comm CART_COMM, 
+                            const int      myid, 
+                            const double   local_origin_x, 
+                            const double   local_origin_y, 
+                            const double   local_origin_z, 
+                            const double   delta, 
+                            const int      NX, 
                             const int      NY, 
                             const int      NZ, 
                             const int      time,
@@ -151,6 +192,7 @@ void domainDecomp3D(// inputs
       const double GEE11 = -0.27;   // interaction strength
       const double tau = 1.0;       // relaxation time
       const double rhoAvg = 0.693;  // reference density value
+      const int Q = 19;             // number of streaming directions
 
 //    D2Q9 directions
 

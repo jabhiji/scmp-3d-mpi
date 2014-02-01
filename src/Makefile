@@ -18,10 +18,13 @@ $(EXE):	mpiSetup.o \
 	streaming.o \
 	calc_dPdt.o \
 	updateMacro.o \
+	exchangeDBL.o \
+	exchangePDF.o \
+	fillGhostLayers.o \
 	updateEquilibrium.o \
 	writeMesh.o \
 	sc3d.o
-	$(CC) mpiSetup.o domainDecomp.o initialize.o streaming.o calc_dPdt.o updateMacro.o updateEquilibrium.o writeMesh.o sc3d.o -o $(EXE) -L /Users/jabhiji/MYLIBS/hdf5/lib -lm -lhdf5 -lz -liconv
+	$(CC) mpiSetup.o domainDecomp.o initialize.o streaming.o calc_dPdt.o updateMacro.o exchangeDBL.o exchangePDF.o fillGhostLayers.o updateEquilibrium.o writeMesh.o sc3d.o -o $(EXE) -L /Users/jabhiji/MYLIBS/hdf5/lib -lm -lhdf5 -lz -liconv
 
 # compile dependencies
 
@@ -42,6 +45,15 @@ calc_dPdt.o: calc_dPdt.h calc_dPdt.cpp
 
 updateMacro.o: updateMacro.h updateMacro.cpp
 	$(CC) $(CFLAGS) -c updateMacro.cpp -o updateMacro.o
+
+exchangeDBL.o: exchangeInfo.h exchangeDBL.cpp
+	$(CC) $(CFLAGS) -c exchangeDBL.cpp -o exchangeDBL.o
+
+exchangePDF.o: exchangeInfo.h exchangePDF.cpp
+	$(CC) $(CFLAGS) -c exchangePDF.cpp -o exchangePDF.o
+
+fillGhostLayers.o: fillGhostLayers.h fillGhostLayers.cpp
+	$(CC) $(CFLAGS) -c fillGhostLayers.cpp -o fillGhostLayers.o
 
 updateEquilibrium.o: updateEquilibrium.h updateEquilibrium.cpp
 	$(CC) $(CFLAGS) -c updateEquilibrium.cpp -o updateEquilibrium.o
