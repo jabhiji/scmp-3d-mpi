@@ -10,7 +10,7 @@ void writeMesh(const int      nn,
                const double   local_origin_x, 
                const double   local_origin_y, 
                const double   local_origin_z, 
-               const double   delta, 
+               const double   delta,
                const int      LX,
                const int      LY,
                const int      LZ,
@@ -19,10 +19,14 @@ void writeMesh(const int      nn,
 {
     std::cout << "writing data to output files for t = " << time << std::endl;
 
+    const int GX = nn + LX + nn;    // size along X including ghost nodes
+    const int GY = nn + LY + nn;    // size along Y including ghost nodes
+    const int GZ = nn + LZ + nn;    // size along Z including ghost nodes
+
     // create a 1D array of X-Y-Z coordinates for this process
     // these are "NODE CENTERED" values at the vertices of the voxels
 
-    float *xyz = new float [LX*LY*LZ*3];
+    float *xyz = new float [GX*GY*GZ*3];
 
     // "natural" index of the "3D" array
 
@@ -30,39 +34,15 @@ void writeMesh(const int      nn,
 
     // begin for loop to populate xyz
 
-    for (int k = 0; k < LZ; k++)
+    for (int k = 0; k < GZ; k++)
     {
-        for (int j = 0; j < LY; j++)
+        for (int j = 0; j < GY; j++)
         {
-            for (int i = 0; i < LX; i++)
+            for (int i = 0; i < GX; i++)
             {
-                xyz[ndx++] = local_origin_x + (float) i * delta;
-                xyz[ndx++] = local_origin_y + (float) j * delta;
-                xyz[ndx++] = local_origin_z + (float) k * delta;
-            }
-        }
-    }
-
-    // create a local density array without ghost nodes
-    float* RHO = new float[LX*LY*LZ];
-
-    const int GX = nn + LX + nn;    // size along X including ghost nodes
-    const int GY = nn + LY + nn;    // size along Y including ghost nodes
-
-    for (int k = 0; k < LZ; k++)
-    {
-        int K = nn + k;
-        for (int j = 0; j < LY; j++)
-        {
-            int J = nn + j;
-            for (int i = 0; i < LX; i++)
-            {
-                int I = nn + i;
-
-                int n = i + LX*j + LX*LY*k;   // natural index of (i,j,k) for RHO
-                int N = I + GX*J + GX*GY*K;   // natural index of (i,j,k) for rho
-
-                RHO[n] = (float) rho[N];
+                xyz[ndx++] = local_origin_x - delta + (float) i * delta;
+                xyz[ndx++] = local_origin_y - delta + (float) j * delta;
+                xyz[ndx++] = local_origin_z - delta + (float) k * delta;
             }
         }
     }
@@ -92,7 +72,7 @@ void writeMesh(const int      nn,
     // MESH DATA
     {
         // describe the size of the array and create the data space for fixed size dataset
-        dimsf[0] = LX*LY*LZ*3;
+        dimsf[0] = GX*GY*GZ*3;
         dataspace = H5Screate_simple(RANK, dimsf, NULL);
 
         // define datatype for the data in the file
@@ -113,13 +93,13 @@ void writeMesh(const int      nn,
     // NODE CENTERED DATA (rho)
     {
         // describe the size of the array and create the data space for fixed size dataset
-        dimsf[0] = LX*LY*LZ;
+        dimsf[0] = GX*GY*GZ;
         dataspace = H5Screate_simple(RANK, dimsf, NULL);
 
         // define datatype for the data in the file
         // we will store double precision numbers
 
-        datatype = H5Tcopy(H5T_NATIVE_FLOAT);
+        datatype = H5Tcopy(H5T_NATIVE_DOUBLE);
         status = H5Tset_order(datatype, H5T_ORDER_LE);
 
         // create a new dataset within the file using defined dataspace and datatype and default dataset creation properties
@@ -128,7 +108,7 @@ void writeMesh(const int      nn,
 
         // write the density data to the dataset using default transfer properties
 
-        status = H5Dwrite(dataset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, RHO);
+        status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, rho);
     }
 
     // release resources
@@ -144,7 +124,6 @@ void writeMesh(const int      nn,
     // free allocated memory
 
     delete [] xyz;
-    delete [] RHO;
 
     // create XDMF file containing information about the mesh (light data)
 
@@ -165,15 +144,15 @@ void writeMesh(const int      nn,
     mesh_name << "mpi_" << std::setw(3) << std::setfill('0') << myid;
 
     XDMF << "    <Grid Name=\"mesh " << mesh_name.str() << "\" GridType=\"Uniform\">\n";
-    XDMF << "        <Topology TopologyType=\"3DSMesh\" NumberOfElements=\"" << LZ << " " << LY << " " << LX << "\" >\n";
+    XDMF << "        <Topology TopologyType=\"3DSMesh\" NumberOfElements=\"" << GZ << " " << GY << " " << GX << "\" >\n";
     XDMF << "        </Topology>\n";
     XDMF << "        <Geometry GeometryType=\"XYZ\">\n";
-    XDMF << "            <DataItem Format=\"HDF\" Precision=\" 4 \" Dimensions=\"" << LZ*LY*LX << " " << " 3 \">\n";
+    XDMF << "            <DataItem Format=\"HDF\" Precision=\" 4 \" Dimensions=\"" << GZ*GY*GX << " " << " 3 \">\n";
     XDMF << "                " << "./hdf5/" << hdf5_file << ":/xyz\n";
     XDMF << "            </DataItem>\n";
     XDMF << "        </Geometry>\n";
     XDMF << "        <Attribute Name=\"rho\" AttributeType=\"Scalar\" Center=\"Node\">\n";
-    XDMF << "            <DataItem Dimensions=\"" << LZ << " " << LY << " " << LX << "\" Precision=\" 4 \" Format=\"HDF\">\n";
+    XDMF << "            <DataItem Dimensions=\"" << GZ << " " << GY << " " << GX << "\" Precision=\" 8 \" Format=\"HDF\">\n";
     XDMF << "                " << "./hdf5/" << hdf5_file << ":/rho\n";
     XDMF << "            </DataItem>\n";
     XDMF << "        </Attribute>\n";

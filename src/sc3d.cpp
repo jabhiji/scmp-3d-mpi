@@ -145,7 +145,7 @@
 
 //      time integration loop
 
-        while(time < 1000)
+        while(time < MAXIMUM_TIME)
         {
           time++; // increment lattice time
 
@@ -204,7 +204,7 @@
 
 //        write output data using (XDMF+HDF5)
 
-          if(time%100 == 0) 
+          if(time%frame_rate == 0) 
           {
              writeMesh(nn, CART_COMM, myid, 
                        local_origin_x, local_origin_y, local_origin_z, delta, 
