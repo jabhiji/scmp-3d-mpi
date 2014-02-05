@@ -19,8 +19,8 @@ output.close()
 
 os.system('cat ../out/global_header.xmf > ../out/time_series.xmf')
 
-num_frame  = 100
-frame_rate = 50
+num_frame  = 10
+frame_rate = 10
 
 for time in range (0,num_frame+1):
   frame = time*frame_rate

@@ -17,7 +17,7 @@
       { 
         const int GX = nn + NX + nn;
         const int GY = nn + NY + nn;
-        const int GZ = nn + NZ + nn;
+
         // interparticle forces
         for(int k = 0; k < NZ; k++)
         {  
@@ -49,9 +49,6 @@
               dPdt_x[N] = -Gsumx;
               dPdt_y[N] = -Gsumy;
               dPdt_z[N] = -Gsumz;
-
-          //  printf("calc_dPdt --- %f %f %f\n", Gsumx, Gsumy, Gsumz);
-
             }
           }
         }

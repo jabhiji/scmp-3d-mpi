@@ -60,6 +60,9 @@ void domainDecomp3D(// inputs
 //    initialize all buffers
 
       extern void initialize(const int nn, const int NX, const int NY, const int NZ, const int myid,
+                             const double local_origin_x,
+                             const double local_origin_y,
+                             const double local_origin_z,
                              const double rhoAvg,
                              double* ex, double* ey, double* ez, double* wt,
                              double* rho, double* u, double* v, double* w,
@@ -160,16 +163,16 @@ void domainDecomp3D(// inputs
 
 //    LBM parameters
 
-      const int NX = 64;         // number of lattice points along X
-      const int NY = 64;         // number of lattice points along Y
-      const int NZ = 64;         // number of lattice points along Z
+      const int NX = 200;        // number of lattice points along X
+      const int NY = 50;         // number of lattice points along Y
+      const int NZ = 50;         // number of lattice points along Z
 
       const double GEE11 = -0.27;     // interaction strength
       const double tau = 1.0;         // relaxation time
-      const double rhoAvg = 0.475;    // reference density value
+      const double rhoAvg = 0.693;    // reference density value
       const int Q = 19;               // number of streaming directions
-      const int MAXIMUM_TIME = 5000;  // for time integration 
-      const int frame_rate = 50;      // time interval for writing results
+      const int MAXIMUM_TIME = 100;   // for time integration 
+      const int frame_rate = 10;      // time interval for writing results
 
       const double delta = 1.0;  // grid spacing is unity along X and Y
 

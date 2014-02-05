@@ -10,7 +10,7 @@
       {
         const int GX = nn + NX + nn;
         const int GY = nn + NY + nn;
-        const int GZ = nn + NZ + nn;
+
         for(int k = 0; k < NZ; k++)
         {  
           int K = nn+k;

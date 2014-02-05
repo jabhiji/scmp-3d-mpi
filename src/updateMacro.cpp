@@ -11,7 +11,7 @@
       { 
         const int GX = nn + NX + nn;
         const int GY = nn + NY + nn;
-        const int GZ = nn + NZ + nn;
+
         // update density and velocity
         for(int k = 0; k < NZ; k++)
         {  
@@ -29,10 +29,11 @@
               double fez_sum = 0;
               for(int id = 0; id < 19; id++)
               {
-                f_sum += f[19*N + id];
-                fex_sum += f[19*N + id]*ex[id];
-                fey_sum += f[19*N + id]*ey[id];
-                fez_sum += f[19*N + id]*ez[id];
+                int f_index = 19*N + id;
+                f_sum   += f[f_index];
+                fex_sum += f[f_index]*ex[id];
+                fey_sum += f[f_index]*ey[id];
+                fez_sum += f[f_index]*ez[id];
               }
               rho[N] = f_sum;
               u[N] = fex_sum / rho[N] + tau * dPdt_x[N] / rho[N];

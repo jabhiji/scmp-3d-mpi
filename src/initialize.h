@@ -2,7 +2,7 @@
 #define INITIALIZE_H
 
       #include <iostream>     // cout()
-//    #include <cmath>        // pow()
+      #include <cmath>        // using math functions 
 //    #include <ctime>        // clock_t, clock(), CLOCKS_PER_SEC
 
 #endif

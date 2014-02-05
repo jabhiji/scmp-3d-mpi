@@ -3,6 +3,9 @@
       #include "initialize.h"
 
       void initialize(const int nn, const int NX, const int NY, const int NZ, const int myid,
+                      const double local_origin_x,
+                      const double local_origin_y,
+                      const double local_origin_z,
                       const double rhoAvg,
                       double* ex, double* ey, double* ez, double* wt,
                       double* rho, double* u, double* v, double* w,
@@ -11,8 +14,9 @@
         std::cout << "Initializing buffers.....";
 
 //      initialize random seed
+//      useful for spinodal decomposition
 
-        srand (time(NULL) + myid);
+        srand (time(NULL) + myid);  
 
 //      initialize density and velocity
 
@@ -31,7 +35,28 @@
             {
               int I = nn+i;
               int N = I + GX*J + GX*GY*K;
-              rho[N] = rhoAvg - 0.5*rhoVar + rhoVar * rand()/RAND_MAX;
+
+              // global (x,y,z) coordinates of node (i,j,k)
+              double x = local_origin_x + (double) i;
+              double y = local_origin_y + (double) j;
+              double z = local_origin_z + (double) k;
+
+              // spinodal decomposition
+     //       rho[N] = rhoAvg - 0.5*rhoVar + rhoVar * rand()/RAND_MAX;
+
+              // cylinder with axis along X
+              double PI = 3.1415;
+              double ycen = 25.0, zcen = 25.0;
+              double radius = 7.5  + 0.25*cos(2*PI*x/100.0);
+              if((y-ycen)*(y-ycen) + (z-zcen)*(z-zcen) <  radius*radius)
+              {
+                  rho[N] = 1.85;
+              }
+              else
+              {
+                  rho[N] = 0.18;
+              }
+
               u[N] = 0.0;
               v[N] = 0.0;
               w[N] = 0.0;

@@ -64,7 +64,9 @@
 
 //      initialize fields
 
-        initialize(nn, LX, LY, LZ, myid, rhoAvg, &ex[0], &ey[0], &ez[0], &wt[0], 
+        initialize(nn, LX, LY, LZ, myid,
+                   local_origin_x, local_origin_y, local_origin_z,
+                   rhoAvg, &ex[0], &ey[0], &ez[0], &wt[0], 
                    rho, u, v, w, f, f_new, f_eq);
 
         // fill ghost layers in the macroscopic variable buffers ( rho, u, v, w )
